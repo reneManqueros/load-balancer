@@ -9,6 +9,7 @@ import (
 	"log"
 	"math/rand"
 	"net"
+	"os"
 	"sync"
 	"time"
 )
@@ -56,6 +57,15 @@ func (l *LoadBalancer) ToDisk() {
 }
 
 func (l *LoadBalancer) FromDisk() {
+	if _, err := os.Stat(l.ConfigFile); errors.Is(err, os.ErrNotExist) {
+		log.Println("no backends file, creating blank")
+		_, err = os.Create(l.ConfigFile)
+		if err != nil {
+			log.Fatalln("couldnt create backends file")
+		}
+		return
+	}
+
 	b, err := ioutil.ReadFile(l.ConfigFile)
 	if err != nil {
 		log.Fatalln("error loading backends file", err)
