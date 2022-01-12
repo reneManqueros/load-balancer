@@ -30,9 +30,21 @@ Add a backend:
 ./loadbalancer add 127.0.0.1:8080
 ```
 
+Add a backend via telnet - Send a "+" and the address:
+```shell
+telnet 127.0.0.1 33333
++127.0.0.1:8080
+```
+
 Remove a backend:
 ```shell
 ./loadbalancer add 127.0.0.1:8080
+```
+
+Remove a backend via telnet - Send a "-" and the address:
+```shell
+telnet 127.0.0.1 33333
+-127.0.0.1:8080
 ```
 
 ## Parameters 
