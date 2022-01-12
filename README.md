@@ -36,7 +36,8 @@ Remove a backend:
 ```
 
 ## Parameters 
-###When running as load balancer
+
+### When running as load balancer
 Listen for TCP (default)
 ```shell
 ./loadbalancer balance network=tcp
