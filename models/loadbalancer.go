@@ -17,9 +17,9 @@ import (
 type LoadBalancer struct {
 	Network    string
 	Source     string
+	ConfigFile string
 	Backends   []Backend `yaml:"backends"`
 	Mutex      sync.Mutex
-	ConfigFile string
 }
 
 func (l *LoadBalancer) GetBackend() (b Backend, err error) {

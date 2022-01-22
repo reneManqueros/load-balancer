@@ -8,8 +8,8 @@ import (
 )
 
 type Management struct {
-	ListenAddress string
 	LoadBalancer  *LoadBalancer
+	ListenAddress string
 }
 
 func (m Management) Send(message string) {
