@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-var forwardCmd = &cobra.Command{
+var balanceCmd = &cobra.Command{
 	Use:   "balance",
 	Short: "Run load balancer",
 	Run: func(cmd *cobra.Command, args []string) {
@@ -61,6 +61,6 @@ var forwardCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(forwardCmd)
-	forwardCmd.Flags()
+	rootCmd.AddCommand(balanceCmd)
+	balanceCmd.Flags()
 }
