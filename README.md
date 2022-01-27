@@ -62,7 +62,7 @@ Listen for UDP
 
 Change listen Port (default: 8081)
 ```shell
-./loadbalancer balance network=tcp
+./loadbalancer balance address=:8088
 ```
 
 Disable management console
