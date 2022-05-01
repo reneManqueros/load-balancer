@@ -75,6 +75,11 @@ Config file location (default: ./backends.yml)
 ./loadbalancer balance config="/etc/loadbalancer/backends.yml"
 ```
 
+Enable verbose mode (default: false)
+```shell
+./loadbalancer balance verbose=true
+```
+
 ### When running as load balancer or when adding/removing backends
 Change management console host/port
 ```shell

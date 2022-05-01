@@ -20,6 +20,7 @@ type LoadBalancer struct {
 	ConfigFile string
 	Backends   []Backend `yaml:"backends"`
 	Mutex      sync.Mutex
+	IsVerbose  bool
 }
 
 func (l *LoadBalancer) GetBackend() (b Backend, err error) {
@@ -125,7 +126,9 @@ func (l *LoadBalancer) Listen() {
 			continue
 		}
 
-		log.Println(fmt.Sprintf(`routing from %v through %s`, sourceConnection.LocalAddr(), destination))
+		if l.IsVerbose == true {
+			log.Println(fmt.Sprintf(`routing from %v through %s`, sourceConnection.LocalAddr(), destination))
+		}
 		go l.handleRequest(sourceConnection, destination.Address)
 	}
 }

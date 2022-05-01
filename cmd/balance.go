@@ -21,6 +21,7 @@ var balanceCmd = &cobra.Command{
 		listenAddress := ":8081"
 		managementAddress := ":33333"
 		configFile := "./backends.yml"
+		isVerbose := false
 
 		// Overrides
 		for _, v := range args {
@@ -38,6 +39,9 @@ var balanceCmd = &cobra.Command{
 				if argumentParts[0] == "config" {
 					configFile = argumentParts[1]
 				}
+				if argumentParts[0] == "verbose" && argumentParts[1] == "true" {
+					isVerbose = true
+				}
 			}
 		}
 
@@ -46,6 +50,7 @@ var balanceCmd = &cobra.Command{
 			Source:     listenAddress,
 			Mutex:      sync.Mutex{},
 			ConfigFile: configFile,
+			IsVerbose:  isVerbose,
 		}
 		lb.FromDisk()
 
