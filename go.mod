@@ -1,9 +1,9 @@
 module loadbalancer
 
-go 1.17
+go 1.18
 
 require (
-	github.com/spf13/cobra v1.3.0
+	github.com/spf13/cobra v1.4.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
