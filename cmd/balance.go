@@ -4,6 +4,7 @@ import (
 	"github.com/spf13/cobra"
 	"loadbalancer/models"
 	"math/rand"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -22,7 +23,7 @@ var balanceCmd = &cobra.Command{
 		managementAddress := ":33333"
 		configFile := "./backends.yml"
 		isVerbose := false
-
+		timeout := 0
 		// Overrides
 		for _, v := range args {
 			argumentParts := strings.Split(v, "=")
@@ -39,6 +40,9 @@ var balanceCmd = &cobra.Command{
 				if argumentParts[0] == "config" {
 					configFile = argumentParts[1]
 				}
+				if argumentParts[0] == "timeout" {
+					timeout, _ = strconv.Atoi(argumentParts[1])
+				}
 				if argumentParts[0] == "verbose" && argumentParts[1] == "true" {
 					isVerbose = true
 				}
@@ -47,6 +51,7 @@ var balanceCmd = &cobra.Command{
 
 		lb := models.LoadBalancer{
 			Network:    listenNetwork,
+			Timeout:    timeout,
 			Source:     listenAddress,
 			Mutex:      sync.Mutex{},
 			ConfigFile: configFile,

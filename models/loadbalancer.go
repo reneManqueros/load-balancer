@@ -21,6 +21,7 @@ type LoadBalancer struct {
 	Backends   []Backend `yaml:"backends"`
 	Mutex      sync.Mutex
 	IsVerbose  bool
+	Timeout    int
 }
 
 func (l *LoadBalancer) GetBackend() (b Backend, err error) {
@@ -109,9 +110,16 @@ func (l *LoadBalancer) Remove(backend Backend) bool {
 }
 
 func (l *LoadBalancer) Listen() {
+	defer func() {
+		if r := recover(); r != nil {
+			err := r.(error)
+			log.Println("UNHANDLED ERROR! :", err)
+		}
+	}()
+
 	ln, err := net.Listen(l.Network, l.Source)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
 	}
 
 	for {
@@ -137,7 +145,7 @@ func (l *LoadBalancer) handleRequest(sourceConnection net.Conn, destinationAddre
 	var destinationConnection net.Conn
 	var err error
 
-	destinationConnection, err = net.DialTimeout(l.Network, destinationAddress, 300*time.Millisecond)
+	destinationConnection, err = net.DialTimeout(l.Network, destinationAddress, time.Duration(l.Timeout)*time.Millisecond)
 	if err != nil {
 		log.Println("handle request error", err)
 		return

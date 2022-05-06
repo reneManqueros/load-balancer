@@ -80,6 +80,11 @@ Enable verbose mode (default: false)
 ./loadbalancer balance verbose=true
 ```
 
+Backend timeout in milliseconds (default: 0)
+```shell
+./loadbalancer balance timeout=300
+```
+
 ### When running as load balancer or when adding/removing backends
 Change management console host/port
 ```shell
