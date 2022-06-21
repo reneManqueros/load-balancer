@@ -3,6 +3,7 @@ package models
 import (
 	"errors"
 	"fmt"
+	"github.com/remeh/sizedwaitgroup"
 	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
@@ -15,13 +16,14 @@ import (
 )
 
 type LoadBalancer struct {
-	Network    string
-	Source     string
-	ConfigFile string
-	Backends   []Backend `yaml:"backends"`
-	Mutex      sync.Mutex
-	IsVerbose  bool
-	Timeout    int
+	Network     string
+	Source      string
+	ConfigFile  string
+	Backends    []Backend `yaml:"backends"`
+	Mutex       sync.Mutex
+	IsVerbose   bool
+	Timeout     int
+	Connections int
 }
 
 func (l *LoadBalancer) GetBackend() (b Backend, err error) {
@@ -122,6 +124,7 @@ func (l *LoadBalancer) Listen() {
 		log.Println(err)
 	}
 
+	swg := sizedwaitgroup.New(l.Connections)
 	for {
 		sourceConnection, err := ln.Accept()
 		if err != nil {
@@ -137,11 +140,12 @@ func (l *LoadBalancer) Listen() {
 		if l.IsVerbose == true {
 			log.Println(fmt.Sprintf(`routing from %v through %s`, sourceConnection.LocalAddr(), destination))
 		}
-		go l.handleRequest(sourceConnection, destination.Address)
+		swg.Add()
+		go l.handleRequest(sourceConnection, destination.Address, &swg)
 	}
 }
 
-func (l *LoadBalancer) handleRequest(sourceConnection net.Conn, destinationAddress string) {
+func (l *LoadBalancer) handleRequest(sourceConnection net.Conn, destinationAddress string, tswg *sizedwaitgroup.SizedWaitGroup) {
 	var destinationConnection net.Conn
 	var err error
 
@@ -150,13 +154,17 @@ func (l *LoadBalancer) handleRequest(sourceConnection net.Conn, destinationAddre
 		log.Println("handle request error", err)
 		return
 	}
-
-	go copyIO(sourceConnection, destinationConnection)
-	go copyIO(destinationConnection, sourceConnection)
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+	go copyIO(sourceConnection, destinationConnection, &wg)
+	go copyIO(destinationConnection, sourceConnection, &wg)
+	wg.Wait()
+	tswg.Done()
 }
 
-func copyIO(src, dest net.Conn) {
+func copyIO(src, dest net.Conn, twg *sync.WaitGroup) {
 	defer src.Close()
 	defer dest.Close()
 	io.Copy(src, dest)
+	defer twg.Done()
 }
