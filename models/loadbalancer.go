@@ -16,14 +16,17 @@ import (
 )
 
 type LoadBalancer struct {
-	Network     string
-	Source      string
-	ConfigFile  string
-	Backends    []Backend `yaml:"backends"`
-	Mutex       sync.Mutex
-	IsVerbose   bool
-	Timeout     int
-	Connections int
+	IsVerbose         bool
+	Timeout           int
+	Connections       int
+	Backends          []Backend `yaml:"backends"`
+	EvictChances      int
+	EvictableBackends map[string]int
+	EvictableMutex    sync.Mutex
+	Mutex             sync.Mutex
+	Network           string
+	Source            string
+	ConfigFile        string
 }
 
 func (l *LoadBalancer) GetBackend() (b Backend, err error) {
@@ -141,17 +144,40 @@ func (l *LoadBalancer) Listen() {
 			log.Println(fmt.Sprintf(`routing from %v through %s`, sourceConnection.LocalAddr(), destination))
 		}
 		swg.Add()
-		go l.handleRequest(sourceConnection, destination.Address, &swg)
+		go l.handleRequest(sourceConnection, destination, &swg)
 	}
 }
 
-func (l *LoadBalancer) handleRequest(sourceConnection net.Conn, destinationAddress string, tswg *sizedwaitgroup.SizedWaitGroup) {
+func (l *LoadBalancer) checkAndEvict(backend Backend) {
+	destinationAddress := backend.Address
+	evict := false
+	if l.EvictChances > 0 {
+		l.EvictableMutex.Lock()
+		if _, ok := l.EvictableBackends[destinationAddress]; ok {
+			l.EvictableBackends[destinationAddress]++
+		} else {
+			l.EvictableBackends[destinationAddress] = 1
+		}
+		if l.EvictableBackends[destinationAddress] > l.EvictChances {
+			evict = true
+			log.Println("evicting", destinationAddress)
+			delete(l.EvictableBackends, destinationAddress)
+		}
+		l.EvictableMutex.Unlock()
+	}
+	if evict == true {
+		l.Remove(backend)
+	}
+}
+
+func (l *LoadBalancer) handleRequest(sourceConnection net.Conn, backend Backend, tswg *sizedwaitgroup.SizedWaitGroup) {
 	var destinationConnection net.Conn
 	var err error
 
-	destinationConnection, err = net.DialTimeout(l.Network, destinationAddress, time.Duration(l.Timeout)*time.Millisecond)
+	destinationConnection, err = net.DialTimeout(l.Network, backend.Address, time.Duration(l.Timeout)*time.Millisecond)
 	if err != nil {
 		log.Println("handle request error", err)
+		l.checkAndEvict(backend)
 		return
 	}
 	wg := sync.WaitGroup{}
